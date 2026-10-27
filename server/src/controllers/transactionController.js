@@ -116,6 +116,21 @@ export const createTransaction = async (req, res, next) => {
     if (accountId) {
       primaryAccount = await Account.findOne({ _id: accountId, userId });
     }
+    if (!primaryAccount && paymentMethod === 'Credit Card') {
+      primaryAccount = await Account.findOne({ userId, type: 'credit' });
+      if (!primaryAccount) {
+        primaryAccount = await Account.create({
+          userId,
+          name: 'Platinum Credit Card',
+          type: 'credit',
+          balance: 0,
+          currency: req.user.preferredCurrency || 'INR',
+          institution: 'Credit Card Account',
+          accountNumberLast4: '4192',
+          isDefault: false,
+        });
+      }
+    }
     if (!primaryAccount) {
       primaryAccount = await Account.findOne({ userId, isDefault: true }) || await Account.findOne({ userId });
     }

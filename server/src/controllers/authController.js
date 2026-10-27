@@ -78,6 +78,16 @@ export const register = async (req, res, next) => {
         institution: 'FinFlow Vault',
         isDefault: false,
       },
+      {
+        userId: newUser._id,
+        name: 'Platinum Credit Card',
+        type: 'credit',
+        balance: 0,
+        currency: preferredCurrency,
+        institution: 'FinFlow Credit Instrument',
+        accountNumberLast4: '4192',
+        isDefault: false,
+      },
     ]);
 
     const token = signToken(newUser._id);
