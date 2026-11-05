@@ -176,6 +176,9 @@ export const RegisterPage = () => {
         if (res.mockMobileOtp) {
           setMobileOtp(res.mockMobileOtp);
         }
+        if (res.mockEmailOtp) {
+          setEmailOtp(res.mockEmailOtp);
+        }
 
         // Save session so page refresh does not lose progress
         sessionStorage.setItem(
@@ -325,7 +328,10 @@ export const RegisterPage = () => {
       const res = await authApi.sendEmailOtp({ registrationId, email });
       if (res.success) {
         setEmailCooldown(30);
-        setSuccessMsg('A new verification code has been sent to your email.');
+        setSuccessMsg(res.message || 'A new verification code has been sent to your email.');
+        if (res.mockEmailOtp) {
+          setEmailOtp(res.mockEmailOtp);
+        }
       } else {
         setError(res.message);
       }

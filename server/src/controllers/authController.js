@@ -254,6 +254,15 @@ export const initiateRegistration = async (req, res, next) => {
 
     const isSimulated = emailDelivery.isMock || smsDelivery.isMock;
 
+    let message = 'Verification codes have been dispatched to your email address and mobile phone.';
+    if (emailDelivery.isMock && smsDelivery.isMock) {
+      message = `Cloud Demo Mode: Email OTP: ${emailOtp} | Mobile OTP: ${mobileOtp}`;
+    } else if (emailDelivery.isMock) {
+      message = `Render Cloud Notice: Email OTP: ${emailOtp} (SMTP ports 465/587 blocked by cloud host).`;
+    } else if (smsDelivery.isMock) {
+      message = `Verification code dispatched to your email! (Mobile simulation code: ${mobileOtp})`;
+    }
+
     res.status(200).json({
       success: true,
       registrationId: pending._id,
@@ -264,10 +273,9 @@ export const initiateRegistration = async (req, res, next) => {
       emailVerified: false,
       mobileVerified: false,
       isMock: isSimulated,
+      mockEmailOtp: emailDelivery.isMock ? emailOtp : undefined,
       mockMobileOtp: smsDelivery.isMock ? mobileOtp : undefined,
-      message: smsDelivery.isMock
-        ? `Verification code dispatched to your email! (Mobile simulation code: ${mobileOtp})`
-        : 'Verification codes have been dispatched to your email address and mobile phone.',
+      message,
     });
   } catch (error) {
     next(error);
@@ -330,8 +338,10 @@ export const sendEmailOtp = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
+      isMock: delivery.isMock,
+      mockEmailOtp: delivery.isMock ? otp : undefined,
       message: delivery.isMock
-        ? 'Dev Mode: New email OTP generated (check server console).'
+        ? `Render Cloud Notice: Email OTP: ${otp} (SMTP blocked on cloud free tier).`
         : 'Verification code sent. Please check your email inbox and spam folder.',
       maskedEmail: maskEmail(pending.email),
     });
