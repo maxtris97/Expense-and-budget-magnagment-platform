@@ -65,7 +65,7 @@ export const AuthProvider = ({ children }) => {
   const loginWithOtp = async ({ mobileNumber, countryCode = '+91', otp }) => {
     setIsLoading(true);
     try {
-      const res = await authApi.verifyOtp({ mobileNumber, countryCode, otp, purpose: 'login' });
+      const res = await authApi.verifyLoginOtp({ mobileNumber, countryCode, otp });
       if (res.success && res.token) {
         localStorage.setItem('finflow_token', res.token);
         localStorage.removeItem('finflow_demo_mode');
@@ -84,15 +84,8 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     setIsLoading(true);
     try {
-      const res = await authApi.register(userData);
-      if (res.success && res.token) {
-        localStorage.setItem('finflow_token', res.token);
-        localStorage.removeItem('finflow_demo_mode');
-        setToken(res.token);
-        setUser(res.user);
-        return { success: true };
-      }
-      return { success: false, message: res.message || 'Registration failed' };
+      const res = await authApi.initiateRegistration(userData);
+      return res;
     } catch (err) {
       return { success: false, message: err.message || 'Registration error' };
     } finally {

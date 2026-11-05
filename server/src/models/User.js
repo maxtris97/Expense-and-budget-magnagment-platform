@@ -29,6 +29,15 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    emailVerified: {
+      type: Boolean,
+      default: false,
+    },
+    accountStatus: {
+      type: String,
+      enum: ['pending_verification', 'active', 'suspended'],
+      default: 'active',
+    },
     passwordResetTokenHash: {
       type: String,
       select: false,

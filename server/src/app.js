@@ -90,6 +90,9 @@ const otpLimiter = rateLimit({
   },
 });
 app.use('/api/auth/send-otp', otpLimiter);
+app.use('/api/auth/send-login-otp', otpLimiter);
+app.use('/api/auth/send-email-otp', otpLimiter);
+app.use('/api/auth/send-mobile-otp', otpLimiter);
 app.use('/api/auth/resend-otp', otpLimiter);
 app.use('/api/auth/forgot-password', otpLimiter);
 

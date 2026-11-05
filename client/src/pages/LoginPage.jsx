@@ -93,10 +93,9 @@ export const LoginPage = () => {
 
     setLoading(true);
     try {
-      const res = await authApi.sendOtp({
+      const res = await authApi.sendLoginOtp({
         countryCode,
         mobileNumber: cleanNumber,
-        purpose: 'login',
       });
 
       if (res.success) {
@@ -106,10 +105,10 @@ export const LoginPage = () => {
         setResendCooldown(30);
         setSuccessMsg(res.message || 'OTP sent successfully to your registered mobile number.');
       } else {
-        setError(res.message || 'Failed to send OTP.');
+        setError(res.message || 'Unable to verify this mobile number. Please check your details or create an account.');
       }
     } catch (err) {
-      setError(err.message || 'Failed to send OTP. Please check your number.');
+      setError(err.message || 'Unable to verify this mobile number. Please check your details or create an account.');
     } finally {
       setLoading(false);
     }
@@ -124,10 +123,9 @@ export const LoginPage = () => {
 
     try {
       const cleanNumber = mobileNumber.replace(/\D/g, '');
-      const res = await authApi.resendOtp({
+      const res = await authApi.sendLoginOtp({
         countryCode,
         mobileNumber: cleanNumber,
-        purpose: 'login',
       });
 
       if (res.success) {

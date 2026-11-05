@@ -138,6 +138,49 @@ export const sendSms = async ({ to, message }) => {
     });
   }
 
+  // 4. MSG91 Provider
+  if (provider === 'msg91') {
+    const authKey = process.env.MSG91_AUTH_KEY || process.env.SMS_API_KEY;
+    const templateId = process.env.MSG91_TEMPLATE_ID;
+    const cleanNumber = to.replace(/^\+/, '');
+
+    return new Promise((resolve, reject) => {
+      const data = JSON.stringify({
+        template_id: templateId,
+        short_url: '0',
+        recipients: [
+          {
+            mobiles: cleanNumber,
+            otp: message.match(/\d{6}/)?.[0] || message,
+          },
+        ],
+      });
+
+      const req = https.request(
+        {
+          hostname: 'control.msg91.com',
+          path: '/api/v5/flow/',
+          method: 'POST',
+          headers: {
+            authkey: authKey,
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(data),
+          },
+        },
+        (res) => {
+          let body = '';
+          res.on('data', (chunk) => (body += chunk));
+          res.on('end', () => {
+            resolve({ success: true, provider: 'msg91' });
+          });
+        }
+      );
+      req.on('error', reject);
+      req.write(data);
+      req.end();
+    });
+  }
+
   // Fallback
   return { success: true, provider: 'mock_generic' };
 };

@@ -2,6 +2,7 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { validatePasswordStrength } from '../src/controllers/authController.js';
 import { normalizePhoneNumber, maskPhoneNumber } from '../src/services/smsService.js';
+import { maskEmail } from '../src/services/emailService.js';
 
 describe('Enhanced Authentication Features', () => {
   describe('Password Complexity Validation', () => {
@@ -49,6 +50,20 @@ describe('Enhanced Authentication Features', () => {
     test('correctly masks phone number for UI display', () => {
       const masked = maskPhoneNumber('+919876543210');
       assert.equal(masked, '+91 ******3210');
+    });
+  });
+
+  describe('Email Masking for Privacy', () => {
+    test('correctly masks email address for UI display', () => {
+      const masked = maskEmail('trishavsharma220@gmail.com');
+      assert.equal(masked.startsWith('t'), true);
+      assert.equal(masked.endsWith('@gmail.com'), true);
+      assert.equal(masked.includes('*'), true);
+    });
+
+    test('handles short local names gracefully', () => {
+      const masked = maskEmail('ab@example.com');
+      assert.equal(masked, 'a*@example.com');
     });
   });
 });
