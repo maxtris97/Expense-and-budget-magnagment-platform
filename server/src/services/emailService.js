@@ -163,6 +163,19 @@ export const deliverEmailOtp = async ({ to, name = 'FineFlow User', otp, purpose
       if (!response.ok) {
         const errorMsg = data.message || `Resend API returned status ${response.status}`;
         console.error(`[Email Service Error] Resend rejected: ${errorMsg}`);
+
+        // If Resend free tier restricts to owner's email address
+        if (data.message && data.message.includes('only send testing emails to your own email address')) {
+          console.warn(`[Email Service] Resend free sandbox restricted to account owner. Falling back to verification code for: ${masked}`);
+          return {
+            success: true,
+            provider: 'resend_sandbox_fallback',
+            isMock: true,
+            otp,
+            warning: 'Resend free sandbox delivers to account owner. Demo code generated.',
+          };
+        }
+
         return {
           success: false,
           provider: 'resend',
@@ -451,6 +464,10 @@ export const sendPasswordResetEmail = async ({ to, name = 'FineFlow User', reset
         }),
       });
       if (response.ok) return { success: true, provider: 'resend' };
+      const data = await response.json().catch(() => ({}));
+      if (data.message && data.message.includes('only send testing emails to your own email address')) {
+        return { success: true, provider: 'resend_sandbox_fallback', isMock: true, resetUrl };
+      }
     } catch (_) {}
   }
 
