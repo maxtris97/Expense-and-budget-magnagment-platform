@@ -18,6 +18,37 @@
 
 ---
 
+### 🌐 Live Production Deployment
+- **Official Live Website:** **[https://fineflow-finance.onrender.com/](https://fineflow-finance.onrender.com/)**
+- **Hosting Environment:** Render Cloud Platform
+- **Database:** MongoDB Atlas (Multi-Shard Replica Set)
+
+---
+
+### 🎓 Final Year Project — Kalasalingam Academy of Research and Education
+- **Department:** Computer Science & Engineering (Artificial Intelligence & Machine Learning)
+- **Team Name:** Team Avengers
+- **Presentation Deck:** [Download PowerPoint Deck (16:9 Widescreen)](docs/presentation/FinFlow_Final_Year_Presentation.pptx)
+
+| Team Member | Registration Number | Project Responsibility |
+|---|---|---|
+| **P. Nithees Kumar** | `99230041158` | Frontend & Dashboard Development |
+| **E. Sujay** | `99230041188` | Backend API & Controller Architecture |
+| **Trishav Supolia** | `99230041203` | Database Models & Data Validation |
+| **Sujitha Mary P** | `99230041132` | Authentication & OTP Security Integration |
+| **Jelci Antoniya A** | `99230041114` | Quality Assurance, Testing & Documentation |
+
+---
+
+### 📸 Application Interface & Authentication Screenshots
+
+<div align="center">
+  <img src="docs/screenshots/register_page.jpg" alt="FinFlow Registration with Dual OTP Verification" width="48%" />
+  <img src="docs/screenshots/auth_overview.jpg" alt="FinFlow Account Authentication Interface" width="48%" />
+</div>
+
+---
+
 ## 📖 Overview
 
 **FinFlow** is a modern full-stack web application engineered to transform personal financial management. Combining the power of the **MERN** stack (MongoDB, Express, React, Node.js) with high-velocity **Vite** build tooling, FinFlow delivers executive financial clarity through:
