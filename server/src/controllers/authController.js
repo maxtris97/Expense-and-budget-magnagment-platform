@@ -953,7 +953,14 @@ export const forgotPassword = async (req, res, next) => {
         user.passwordResetExpiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
         await user.save();
 
-        const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+        // Dynamically resolve client domain so email buttons never point to localhost on mobile/cloud
+        let clientUrl = req.get('origin');
+        if (!clientUrl || (process.env.NODE_ENV === 'production' && clientUrl.includes('localhost'))) {
+          clientUrl = process.env.CLIENT_URL && !process.env.CLIENT_URL.includes('localhost')
+            ? process.env.CLIENT_URL
+            : (process.env.NODE_ENV === 'production' ? 'https://fineflow-finance.onrender.com' : 'http://localhost:5173');
+        }
+        clientUrl = clientUrl.replace(/\/+$/, '');
         const resetUrl = `${clientUrl}/reset-password?token=${rawToken}&email=${encodeURIComponent(user.email)}`;
 
         const emailResult = await sendPasswordResetEmail({
