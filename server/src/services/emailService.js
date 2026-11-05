@@ -19,8 +19,8 @@ export const maskEmail = (email = '') => {
  * Check which email delivery provider is configured
  */
 export const getActiveEmailProvider = () => {
-  if (process.env.RESEND_API_KEY) return 'resend';
   if (process.env.BREVO_API_KEY) return 'brevo';
+  if (process.env.RESEND_API_KEY) return 'resend';
   if (process.env.EMAIL_PROVIDER === 'mock') return 'mock';
   if ((process.env.EMAIL_USER || process.env.GMAIL_USER) && (process.env.EMAIL_PASS || process.env.GMAIL_APP_PASSWORD)) {
     return 'gmail';
@@ -215,8 +215,9 @@ export const deliverEmailOtp = async ({ to, name = 'FineFlow User', otp, purpose
   // ============================================================
   if (provider === 'brevo') {
     try {
-      const apiKey = process.env.BREVO_API_KEY.trim();
-      const senderEmail = process.env.BREVO_SENDER_EMAIL || process.env.EMAIL_FROM_ADDRESS || 'noreply@fineflow.io';
+      const rawKey = process.env.BREVO_API_KEY || '';
+      const apiKey = rawKey.trim().split(/\s+/)[0];
+      const senderEmail = process.env.BREVO_SENDER_EMAIL || process.env.EMAIL_USER || 'tsupolia@gmail.com';
       const senderName = process.env.BREVO_SENDER_NAME || 'FineFlow Finance';
 
       const response = await fetch('https://api.brevo.com/v3/smtp/email', {
@@ -497,15 +498,18 @@ export const sendPasswordResetEmail = async ({ to, name = 'FineFlow User', reset
 
   if (provider === 'brevo') {
     try {
+      const rawKey = process.env.BREVO_API_KEY || '';
+      const apiKey = rawKey.trim().split(/\s+/)[0];
+      const senderEmail = process.env.BREVO_SENDER_EMAIL || process.env.EMAIL_USER || 'tsupolia@gmail.com';
       const response = await fetch('https://api.brevo.com/v3/smtp/email', {
         method: 'POST',
         headers: {
-          'api-key': process.env.BREVO_API_KEY.trim(),
+          'api-key': apiKey,
           'Content-Type': 'application/json',
           Accept: 'application/json',
         },
         body: JSON.stringify({
-          sender: { name: 'FineFlow Finance', email: process.env.BREVO_SENDER_EMAIL || process.env.EMAIL_FROM_ADDRESS || 'noreply@fineflow.io' },
+          sender: { name: 'FineFlow Finance', email: senderEmail },
           to: [{ email: to }],
           subject,
           htmlContent: htmlBody,
