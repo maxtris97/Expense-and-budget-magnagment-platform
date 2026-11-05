@@ -142,7 +142,10 @@ export const deliverEmailOtp = async ({ to, name = 'FineFlow User', otp, purpose
     try {
       const rawKey = process.env.RESEND_API_KEY || '';
       const apiKey = rawKey.trim().split(/\s+/)[0];
-      const from = process.env.RESEND_FROM || process.env.EMAIL_FROM || 'FineFlow Finance <onboarding@resend.dev>';
+      let from = (process.env.RESEND_FROM || '').trim();
+      if (!from || from.includes('@gmail.com') || from.includes('@yahoo.com') || from.includes('@outlook.com') || from.includes('@hotmail.com')) {
+        from = 'FineFlow Finance <onboarding@resend.dev>';
+      }
 
       const response = await fetch('https://api.resend.com/emails', {
         method: 'POST',
@@ -165,15 +168,22 @@ export const deliverEmailOtp = async ({ to, name = 'FineFlow User', otp, purpose
         const errorMsg = data.message || `Resend API returned status ${response.status}`;
         console.error(`[Email Service Error] Resend rejected: ${errorMsg}`);
 
-        // If Resend free tier restricts to owner's email address
-        if (data.message && data.message.includes('only send testing emails to your own email address')) {
+        // If Resend free tier restricts to owner's email address or sender domain unverified
+        const isSandboxOrUnverified =
+          response.status === 403 ||
+          (data.message && (
+            data.message.includes('only send testing emails to your own email address') ||
+            data.message.includes('domain is not verified')
+          ));
+
+        if (isSandboxOrUnverified) {
           console.warn(`[Email Service] Resend free sandbox restricted to account owner. Falling back to verification code for: ${masked}`);
           return {
             success: true,
             provider: 'resend_sandbox_fallback',
             isMock: true,
             otp,
-            warning: 'Resend free sandbox delivers to account owner. Demo code generated.',
+            warning: 'Resend free sandbox delivers to account owner (tsupolia@gmail.com). Demo verification code generated.',
           };
         }
 
@@ -452,6 +462,11 @@ export const sendPasswordResetEmail = async ({ to, name = 'FineFlow User', reset
     try {
       const rawKey = process.env.RESEND_API_KEY || '';
       const apiKey = rawKey.trim().split(/\s+/)[0];
+      let from = (process.env.RESEND_FROM || '').trim();
+      if (!from || from.includes('@gmail.com') || from.includes('@yahoo.com') || from.includes('@outlook.com') || from.includes('@hotmail.com')) {
+        from = 'FineFlow Finance <onboarding@resend.dev>';
+      }
+
       const response = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
@@ -459,7 +474,7 @@ export const sendPasswordResetEmail = async ({ to, name = 'FineFlow User', reset
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          from: process.env.RESEND_FROM || process.env.EMAIL_FROM || 'FineFlow Finance <onboarding@resend.dev>',
+          from,
           to: [to],
           subject,
           html: htmlBody,
@@ -468,7 +483,13 @@ export const sendPasswordResetEmail = async ({ to, name = 'FineFlow User', reset
       });
       if (response.ok) return { success: true, provider: 'resend' };
       const data = await response.json().catch(() => ({}));
-      if (data.message && data.message.includes('only send testing emails to your own email address')) {
+      if (
+        response.status === 403 ||
+        (data.message && (
+          data.message.includes('only send testing emails to your own email address') ||
+          data.message.includes('domain is not verified')
+        ))
+      ) {
         return { success: true, provider: 'resend_sandbox_fallback', isMock: true, resetUrl };
       }
     } catch (_) {}
