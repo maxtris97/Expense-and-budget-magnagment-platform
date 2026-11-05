@@ -28,7 +28,9 @@
 ### 🎓 Final Year Project — Kalasalingam Academy of Research and Education
 - **Department:** Computer Science & Engineering (Artificial Intelligence & Machine Learning)
 - **Team Name:** Team Avengers
-- **Presentation Deck:** [Download PowerPoint Deck (16:9 Widescreen)](docs/presentation/FinFlow_Final_Year_Presentation.pptx)
+- **Presentation Decks:**
+  - 📊 **[Download Project Presentation (.pptx)](docs/presentation/FinFlow_Project_Presentation.pptx)**
+  - 🖥️ **[Download Final Year Defense Deck 16:9 Widescreen (.pptx)](docs/presentation/FinFlow_Final_Year_Presentation.pptx)**
 
 | Team Member | Registration Number | Project Responsibility |
 |---|---|---|
@@ -40,11 +42,43 @@
 
 ---
 
-### 📸 Application Interface & Authentication Screenshots
+### 📸 Application Interface & Website Screenshots
 
 <div align="center">
-  <img src="docs/screenshots/register_page.jpg" alt="FinFlow Registration with Dual OTP Verification" width="48%" />
-  <img src="docs/screenshots/auth_overview.jpg" alt="FinFlow Account Authentication Interface" width="48%" />
+
+#### 1. Executive Dashboard & Real-Time Net Worth Overview
+*Displays real-time aggregated net worth (₹1,54,000.00), monthly inflow/outflow metrics, volumetric cash velocity, and outflow breakdown.*
+<br/>
+<img src="docs/screenshots/02_dashboard_overview.jpg" alt="FinFlow Executive Dashboard Overview" width="95%" />
+
+<br/><br/>
+
+#### 2. Live Frosted Ledger & Quick Transaction Log
+*Real-time synchronized transactions alongside the Express Glass Log instant expense capture interface.*
+<br/>
+<img src="docs/screenshots/03_frosted_ledger_quick_log.jpg" alt="Live Frosted Ledger & Express Glass Log" width="95%" />
+
+<br/><br/>
+
+#### 3. Financial Ledger, Auditing & CSV Export
+*Full audit trail with categorization, search, filtering by type/category, and one-click CSV ledger export.*
+<br/>
+<img src="docs/screenshots/04_transactions_ledger.jpg" alt="Financial Ledger & Transactions Table" width="95%" />
+
+<br/><br/>
+
+#### 4. Financial Analytics, Cash Velocity & Savings Trend
+*Deep behavioral insights, savings consistency, capital accumulation curve, and daily savings velocity cycle.*
+<br/>
+<img src="docs/screenshots/05_analytics_velocity.jpg" alt="Financial Analytics & Velocity" width="95%" />
+
+<br/><br/>
+
+#### 5. User Registration & Password Strength Validation
+*Enterprise registration system featuring real-time password strength validation and dual-channel OTP verification.*
+<br/>
+<img src="docs/screenshots/01_register_account.jpg" alt="FinFlow Registration with Password Strength Indicator" width="60%" />
+
 </div>
 
 ---
