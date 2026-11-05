@@ -113,6 +113,7 @@ export const register = async (req, res, next) => {
       name,
       email: email.toLowerCase(),
       mobileNumber: normalizedPhone,
+      mobileVerified: Boolean(mobileVerified || normalizedPhone),
       passwordHash,
       preferredCurrency,
       themePreference: 'dark',
@@ -439,6 +440,14 @@ export const sendOtp = async (req, res, next) => {
           message: 'No account found registered with this mobile number. Please check the number or sign up.',
         });
       }
+    } else if (purpose === 'registration') {
+      const user = await User.findOne({ mobileNumber: normalizedPhone });
+      if (user) {
+        return res.status(400).json({
+          success: false,
+          message: 'An account with this mobile number already exists. Please log in.',
+        });
+      }
     }
 
     // Rate-limiting: Enforce 30-second cooldown
@@ -468,10 +477,12 @@ export const sendOtp = async (req, res, next) => {
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
 
-    const messageText =
-      purpose === 'reset_password'
-        ? `Your FinFlow password reset code is ${otp}. Valid for 5 minutes.`
-        : `Your FinFlow login code is ${otp}. Valid for 5 minutes. Do not share this with anyone.`;
+    let messageText = `Your FinFlow login code is ${otp}. Valid for 5 minutes. Do not share this with anyone.`;
+    if (purpose === 'reset_password') {
+      messageText = `Your FinFlow password reset code is ${otp}. Valid for 5 minutes.`;
+    } else if (purpose === 'registration') {
+      messageText = `Your FinFlow mobile verification code is ${otp}. Valid for 5 minutes.`;
+    }
 
     await sendSms({
       to: normalizedPhone,
@@ -584,6 +595,13 @@ export const verifyOtp = async (req, res, next) => {
         success: true,
         resetToken,
         message: 'Mobile OTP verified successfully. You may now reset your password.',
+      });
+    } else if (purpose === 'registration') {
+      await record.deleteOne(); // Invalidate OTP after success
+      return res.status(200).json({
+        success: true,
+        verified: true,
+        message: 'Mobile number verified successfully.',
       });
     }
 
