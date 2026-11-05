@@ -9,3 +9,4 @@ Place your project PowerPoint (`.pptx`) or exported PDF presentation here:
 1. Save your PowerPoint presentation as `FineFlow_Presentation.pptx` (or `.pdf`).
 2. Drag and drop it into this folder: `docs/presentation/`.
 3. Commit and push to GitHub!
+
