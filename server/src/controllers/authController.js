@@ -6,7 +6,7 @@ import Account from '../models/Account.js';
 import Otp from '../models/Otp.js';
 import PendingRegistration from '../models/PendingRegistration.js';
 import { sendSms, normalizePhoneNumber, maskPhoneNumber } from '../services/smsService.js';
-import { sendEmailOtp as deliverEmailOtp, sendPasswordResetEmail, maskEmail } from '../services/emailService.js';
+import { sendEmailOtp, sendPasswordResetEmail, maskEmail } from '../services/emailService.js';
 
 // Helper to generate signed JWT
 const signToken = (id) => {
@@ -212,7 +212,7 @@ export const initiateRegistration = async (req, res, next) => {
     );
 
     // Send actual Email OTP
-    await deliverEmailOtp({
+    await sendEmailOtp({
       to: cleanEmail,
       name: name.trim(),
       otp: emailOtp,
@@ -278,7 +278,7 @@ export const sendEmailOtp = async (req, res, next) => {
     pending.emailAttempts = 0;
     await pending.save();
 
-    await deliverEmailOtp({
+    await sendEmailOtp({
       to: pending.email,
       name: pending.name,
       otp,

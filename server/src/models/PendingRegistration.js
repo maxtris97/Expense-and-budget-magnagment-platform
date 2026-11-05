@@ -88,3 +88,4 @@ pendingRegistrationSchema.index({ email: 1, mobileNumber: 1 });
 
 const PendingRegistration = mongoose.model('PendingRegistration', pendingRegistrationSchema);
 export default PendingRegistration;
+
