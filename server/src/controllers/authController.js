@@ -5,8 +5,18 @@ import User from '../models/User.js';
 import Account from '../models/Account.js';
 import Otp from '../models/Otp.js';
 import PendingRegistration from '../models/PendingRegistration.js';
-import { sendSms, normalizePhoneNumber, maskPhoneNumber } from '../services/smsService.js';
-import { sendEmailOtp, sendPasswordResetEmail, maskEmail } from '../services/emailService.js';
+import {
+  deliverSmsOtp,
+  normalizePhoneNumber,
+  maskPhoneNumber,
+  getActiveSmsProvider,
+} from '../services/smsService.js';
+import {
+  deliverEmailOtp,
+  sendPasswordResetEmail,
+  maskEmail,
+  getActiveEmailProvider,
+} from '../services/emailService.js';
 
 // Helper to generate signed JWT
 const signToken = (id) => {
@@ -186,7 +196,38 @@ export const initiateRegistration = async (req, res, next) => {
     const mobileOtpHash = hashSecret(mobileOtp);
     const otpExpiry = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
 
-    // Upsert pending registration challenge (1-hour TTL)
+    // 1. Deliver actual Email OTP
+    const emailDelivery = await deliverEmailOtp({
+      to: cleanEmail,
+      name: name.trim(),
+      otp: emailOtp,
+      purpose: 'registration',
+    });
+
+    if (!emailDelivery.success) {
+      return res.status(502).json({
+        success: false,
+        errorType: 'EMAIL_DELIVERY_FAILED',
+        message: `Failed to send email verification code: ${emailDelivery.error}`,
+      });
+    }
+
+    // 2. Deliver actual SMS OTP
+    const smsDelivery = await deliverSmsOtp({
+      to: normalizedPhone,
+      message: `Your FineFlow mobile verification code is: ${mobileOtp}. Valid for 5 minutes.`,
+      otp: mobileOtp,
+    });
+
+    if (!smsDelivery.success) {
+      return res.status(502).json({
+        success: false,
+        errorType: 'SMS_DELIVERY_FAILED',
+        message: `Failed to send mobile verification code: ${smsDelivery.error}`,
+      });
+    }
+
+    // Upsert pending registration challenge (1-hour TTL) only after provider accepts
     const pending = await PendingRegistration.findOneAndUpdate(
       { email: cleanEmail },
       {
@@ -211,19 +252,7 @@ export const initiateRegistration = async (req, res, next) => {
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
 
-    // Send actual Email OTP
-    await sendEmailOtp({
-      to: cleanEmail,
-      name: name.trim(),
-      otp: emailOtp,
-      purpose: 'registration',
-    });
-
-    // Send actual SMS OTP
-    await sendSms({
-      to: normalizedPhone,
-      message: `Your FinFlow mobile verification code is: ${mobileOtp}. Valid for 5 minutes.`,
-    });
+    const isSimulated = emailDelivery.isMock || smsDelivery.isMock;
 
     res.status(200).json({
       success: true,
@@ -234,7 +263,10 @@ export const initiateRegistration = async (req, res, next) => {
       maskedPhone: maskPhoneNumber(normalizedPhone),
       emailVerified: false,
       mobileVerified: false,
-      message: 'Verification codes have been dispatched to your email address and mobile phone.',
+      isMock: isSimulated,
+      message: isSimulated
+        ? 'Development Mode: Simulated verification codes generated. Check server console.'
+        : 'Verification codes have been dispatched to your email address and mobile phone.',
     });
   } catch (error) {
     next(error);
@@ -272,22 +304,34 @@ export const sendEmailOtp = async (req, res, next) => {
     }
 
     const otp = generateOtp();
-    pending.emailOtpHash = hashSecret(otp);
-    pending.emailOtpExpiresAt = new Date(Date.now() + 5 * 60 * 1000);
-    pending.lastEmailSentAt = new Date();
-    pending.emailAttempts = 0;
-    await pending.save();
 
-    await sendEmailOtp({
+    // Call actual email provider first
+    const delivery = await deliverEmailOtp({
       to: pending.email,
       name: pending.name,
       otp,
       purpose: 'registration',
     });
 
+    if (!delivery.success) {
+      return res.status(502).json({
+        success: false,
+        message: `Failed to dispatch email verification code: ${delivery.error}`,
+      });
+    }
+
+    // Update pending record only on confirmed provider acceptance
+    pending.emailOtpHash = hashSecret(otp);
+    pending.emailOtpExpiresAt = new Date(Date.now() + 5 * 60 * 1000);
+    pending.lastEmailSentAt = new Date();
+    pending.emailAttempts = 0;
+    await pending.save();
+
     res.status(200).json({
       success: true,
-      message: 'A fresh verification passcode has been sent to your email.',
+      message: delivery.isMock
+        ? 'Dev Mode: New email OTP generated (check server console).'
+        : 'Verification code sent. Please check your email inbox and spam folder.',
       maskedEmail: maskEmail(pending.email),
     });
   } catch (error) {
@@ -328,7 +372,7 @@ export const verifyEmailOtp = async (req, res, next) => {
     if (pending.emailOtpExpiresAt < new Date()) {
       return res.status(400).json({
         success: false,
-        message: 'Email verification code has expired. Please request a new one.',
+        message: 'Verification code expired. Please request a new code.',
       });
     }
 
@@ -350,7 +394,7 @@ export const verifyEmailOtp = async (req, res, next) => {
         success: false,
         message:
           remaining > 0
-            ? `Incorrect email OTP. You have ${remaining} attempts remaining.`
+            ? `Invalid verification code. You have ${remaining} attempts remaining.`
             : 'Maximum attempts exceeded. Please request a new code.',
       });
     }
@@ -404,20 +448,33 @@ export const sendMobileOtp = async (req, res, next) => {
     }
 
     const otp = generateOtp();
+
+    // Call actual SMS provider first
+    const delivery = await deliverSmsOtp({
+      to: pending.mobileNumber,
+      message: `Your FineFlow mobile verification code is: ${otp}. Valid for 5 minutes.`,
+      otp,
+    });
+
+    if (!delivery.success) {
+      return res.status(502).json({
+        success: false,
+        message: `Failed to dispatch mobile verification code: ${delivery.error}`,
+      });
+    }
+
+    // Update pending record only on confirmed provider acceptance
     pending.mobileOtpHash = hashSecret(otp);
     pending.mobileOtpExpiresAt = new Date(Date.now() + 5 * 60 * 1000);
     pending.lastMobileSentAt = new Date();
     pending.mobileAttempts = 0;
     await pending.save();
 
-    await sendSms({
-      to: pending.mobileNumber,
-      message: `Your FinFlow mobile verification code is: ${otp}. Valid for 5 minutes.`,
-    });
-
     res.status(200).json({
       success: true,
-      message: 'A fresh verification passcode has been sent to your phone.',
+      message: delivery.isMock
+        ? 'Dev Mode: New mobile OTP generated (check server console).'
+        : 'Verification code sent. Please check your messages.',
       maskedPhone: maskPhoneNumber(pending.mobileNumber),
     });
   } catch (error) {
@@ -460,7 +517,7 @@ export const verifyMobileOtp = async (req, res, next) => {
     if (pending.mobileOtpExpiresAt < new Date()) {
       return res.status(400).json({
         success: false,
-        message: 'Mobile verification code has expired. Please request a new one.',
+        message: 'Verification code expired. Please request a new code.',
       });
     }
 
@@ -482,7 +539,7 @@ export const verifyMobileOtp = async (req, res, next) => {
         success: false,
         message:
           remaining > 0
-            ? `Incorrect mobile OTP. You have ${remaining} attempts remaining.`
+            ? `Invalid verification code. You have ${remaining} attempts remaining.`
             : 'Maximum attempts exceeded. Please request a new code.',
       });
     }
@@ -703,7 +760,7 @@ export const sendLoginOtp = async (req, res, next) => {
     if (!/^\+[1-9]\d{6,14}$/.test(normalizedPhone)) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide a valid mobile number with correct digits.',
+        message: 'Please provide a valid phone number with correct digits.',
       });
     }
 
@@ -736,6 +793,20 @@ export const sendLoginOtp = async (req, res, next) => {
     const otp = generateOtp();
     const otpHash = hashSecret(otp);
 
+    // Call actual SMS provider first
+    const delivery = await deliverSmsOtp({
+      to: normalizedPhone,
+      message: `Your FineFlow login code is ${otp}. Valid for 5 minutes. Do not share this with anyone.`,
+      otp,
+    });
+
+    if (!delivery.success) {
+      return res.status(502).json({
+        success: false,
+        message: `Failed to dispatch login code: ${delivery.error}`,
+      });
+    }
+
     await Otp.findOneAndUpdate(
       { identifier: normalizedPhone, purpose: 'login' },
       {
@@ -750,14 +821,11 @@ export const sendLoginOtp = async (req, res, next) => {
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
 
-    await sendSms({
-      to: normalizedPhone,
-      message: `Your FinFlow login code is ${otp}. Valid for 5 minutes. Do not share this with anyone.`,
-    });
-
     res.status(200).json({
       success: true,
-      message: 'OTP sent successfully to your registered mobile number.',
+      message: delivery.isMock
+        ? 'Dev Mode: Mobile OTP login code generated (check server console).'
+        : 'OTP sent successfully to your registered mobile number.',
       maskedNumber: maskPhoneNumber(normalizedPhone),
       mobileNumber: normalizedPhone,
     });
@@ -791,7 +859,7 @@ export const verifyLoginOtp = async (req, res, next) => {
     if (!record || record.expiresAt < new Date()) {
       return res.status(400).json({
         success: false,
-        message: 'OTP has expired or is invalid. Please request a new code.',
+        message: 'Verification code expired. Please request a new code.',
       });
     }
 
@@ -814,7 +882,7 @@ export const verifyLoginOtp = async (req, res, next) => {
         success: false,
         message:
           remaining > 0
-            ? `Incorrect OTP. You have ${remaining} ${remaining === 1 ? 'attempt' : 'attempts'} remaining.`
+            ? `Invalid verification code. You have ${remaining} ${remaining === 1 ? 'attempt' : 'attempts'} remaining.`
             : 'Maximum verification attempts exceeded. Please request a new code.',
       });
     }
@@ -875,11 +943,18 @@ export const forgotPassword = async (req, res, next) => {
         const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
         const resetUrl = `${clientUrl}/reset-password?token=${rawToken}&email=${encodeURIComponent(user.email)}`;
 
-        await sendPasswordResetEmail({
+        const emailResult = await sendPasswordResetEmail({
           to: user.email,
           name: user.name,
           resetUrl,
         });
+
+        if (!emailResult.success) {
+          return res.status(502).json({
+            success: false,
+            message: `Failed to send password reset email: ${emailResult.error}`,
+          });
+        }
       }
 
       return res.status(200).json({
@@ -904,6 +979,19 @@ export const forgotPassword = async (req, res, next) => {
         const otp = generateOtp();
         const otpHash = hashSecret(otp);
 
+        const smsResult = await deliverSmsOtp({
+          to: normalizedPhone,
+          message: `Your FineFlow password reset code is: ${otp}. Valid for 5 minutes. Do not share it.`,
+          otp,
+        });
+
+        if (!smsResult.success) {
+          return res.status(502).json({
+            success: false,
+            message: `Failed to send password reset code: ${smsResult.error}`,
+          });
+        }
+
         await Otp.findOneAndUpdate(
           { identifier: normalizedPhone, purpose: 'reset_password' },
           {
@@ -917,11 +1005,6 @@ export const forgotPassword = async (req, res, next) => {
           },
           { upsert: true, new: true, setDefaultsOnInsert: true }
         );
-
-        await sendSms({
-          to: normalizedPhone,
-          message: `Your FinFlow password reset code is: ${otp}. Valid for 5 minutes. Do not share it.`,
-        });
       }
 
       return res.status(200).json({
@@ -996,7 +1079,7 @@ export const resetPassword = async (req, res, next) => {
     if (!user) {
       return res.status(400).json({
         success: false,
-        message: 'Password reset link or verification code has expired or is invalid.',
+        message: 'Verification code expired. Please request a new code.',
       });
     }
 
@@ -1034,20 +1117,20 @@ export const verifyOtp = async (req, res, next) => {
     const cleanOtp = String(otp).trim();
     const record = await Otp.findOne({ identifier: normalizedPhone, purpose: 'reset_password' });
     if (!record || record.expiresAt < new Date()) {
-      return res.status(400).json({ success: false, message: 'OTP has expired or is invalid.' });
+      return res.status(400).json({ success: false, message: 'Verification code expired. Please request a new code.' });
     }
     const incomingHash = hashSecret(cleanOtp);
     if (!safeCompare(record.otpHash, incomingHash)) {
       record.attempts += 1;
       await record.save();
-      return res.status(400).json({ success: false, message: 'Invalid OTP code.' });
+      return res.status(400).json({ success: false, message: 'Invalid verification code.' });
     }
     const resetToken = crypto.randomBytes(32).toString('hex');
     record.resetTokenHash = hashSecret(resetToken);
     record.resetTokenExpiresAt = new Date(Date.now() + 15 * 60 * 1000);
     record.otpHash = 'EXHAUSTED';
     await record.save();
-    return res.status(200).json({ success: true, resetToken, message: 'OTP verified successfully.' });
+    return res.status(200).json({ success: true, resetToken, message: 'Verification code verified successfully.' });
   }
   return verifyLoginOtp(req, res, next);
 };

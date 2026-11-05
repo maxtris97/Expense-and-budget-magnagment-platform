@@ -35,6 +35,7 @@ app.use(
 // CORS configuration
 const allowedOrigins = [
   process.env.CLIENT_URL || 'http://localhost:5173',
+  'https://fineflow-finance.onrender.com',
   'http://localhost:5174',
   'http://127.0.0.1:5173',
 ];
@@ -43,10 +44,10 @@ app.use(
   cors({
     origin: (origin, callback) => {
       // Allow requests with no origin (like mobile apps, curl, or Postman)
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.onrender.com')) {
         callback(null, true);
       } else {
-        callback(null, true); // Dev permissive
+        callback(null, true); // Permissive fallback
       }
     },
     credentials: true,
