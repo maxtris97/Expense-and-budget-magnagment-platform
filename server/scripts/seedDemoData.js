@@ -46,13 +46,15 @@ async function seedData() {
     const demoUser = await User.create({
       name: 'Rajiv Sharma',
       email: demoEmail,
+      mobileNumber: '+919876543210',
+      mobileVerified: true,
       passwordHash,
       preferredCurrency: 'INR',
       themePreference: 'dark',
       defaultDateRange: '30d',
       isDemoUser: true,
     });
-    console.log(`Created demo user: ${demoUser.name} (${demoUser.email})`);
+    console.log(`Created demo user: ${demoUser.name} (${demoUser.email}, ${demoUser.mobileNumber})`);
 
     // 2. Create Accounts
     const checkingAccount = await Account.create({

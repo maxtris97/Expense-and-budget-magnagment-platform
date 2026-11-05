@@ -18,6 +18,25 @@ const userSchema = new mongoose.Schema(
       trim: true,
       match: [/^\S+@\S+\.\S+$/, 'Please provide a valid email address'],
     },
+    mobileNumber: {
+      type: String,
+      unique: true,
+      sparse: true,
+      trim: true,
+      match: [/^\+[1-9]\d{6,14}$/, 'Please provide a valid E.164 phone number'],
+    },
+    mobileVerified: {
+      type: Boolean,
+      default: false,
+    },
+    passwordResetTokenHash: {
+      type: String,
+      select: false,
+    },
+    passwordResetExpiresAt: {
+      type: Date,
+      select: false,
+    },
     passwordHash: {
       type: String,
       required: [true, 'Password is required'],
