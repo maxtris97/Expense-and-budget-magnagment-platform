@@ -13,6 +13,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Receipt,
+  Loader2,
 } from 'lucide-react';
 import { transactionApi } from '../api/transactionApi.js';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -38,6 +39,7 @@ export const TransactionsPage = () => {
   const [totalRecords, setTotalRecords] = useState(0);
 
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+  const [exporting, setExporting] = useState(false);
 
   const fetchTransactions = useCallback(async () => {
     setLoading(true);
@@ -81,11 +83,40 @@ export const TransactionsPage = () => {
     }
   };
 
-  const handleExportCsv = () => {
-    window.location.href = transactionApi.getExportUrl({
-      type: typeFilter !== 'all' ? typeFilter : undefined,
-      category: categoryFilter !== 'all' ? categoryFilter : undefined,
-    });
+  const handleExportCsv = async () => {
+    if (exporting) return;
+    try {
+      setExporting(true);
+      const blobData = await transactionApi.exportTransactionsCsv({
+        search: debouncedSearch || undefined,
+        type: typeFilter !== 'all' ? typeFilter : undefined,
+        category: categoryFilter !== 'all' ? categoryFilter : undefined,
+      });
+
+      const blob = new Blob([blobData], { type: 'text/csv;charset=utf-8;' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      const dateStr = new Date().toISOString().split('T')[0];
+      link.setAttribute('download', `finflow-ledger-${dateStr}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Failed to export transactions CSV:', err);
+      let errorMsg = err.message || 'Failed to export CSV. Please try again.';
+      if (err.data instanceof Blob) {
+        try {
+          const text = await err.data.text();
+          const parsed = JSON.parse(text);
+          if (parsed.message) errorMsg = parsed.message;
+        } catch (_) {}
+      }
+      alert(errorMsg);
+    } finally {
+      setExporting(false);
+    }
   };
 
   const categories = [
@@ -116,10 +147,15 @@ export const TransactionsPage = () => {
 
         <button
           onClick={handleExportCsv}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-fin-card border border-fin-border hover:border-fin-accent text-fin-text text-xs font-semibold shadow-sm transition-all active:scale-95 self-start sm:self-auto"
+          disabled={exporting}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-fin-card border border-fin-border hover:border-fin-accent text-fin-text text-xs font-semibold shadow-sm transition-all active:scale-95 self-start sm:self-auto disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          <Download className="w-3.5 h-3.5 text-fin-accent" />
-          <span>Export Ledger (CSV)</span>
+          {exporting ? (
+            <Loader2 className="w-3.5 h-3.5 text-fin-accent animate-spin" />
+          ) : (
+            <Download className="w-3.5 h-3.5 text-fin-accent" />
+          )}
+          <span>{exporting ? 'Exporting...' : 'Export Ledger (CSV)'}</span>
         </button>
       </div>
 

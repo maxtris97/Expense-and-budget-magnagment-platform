@@ -295,32 +295,59 @@ export const deleteTransaction = async (req, res, next) => {
 export const exportTransactionsCsv = async (req, res, next) => {
   try {
     const userId = req.user._id;
-    const { category, type, startDate, endDate } = req.query;
+    const { category, type, startDate, endDate, search, accountId } = req.query;
 
     const query = { userId };
-    if (type) query.type = type;
-    if (category && category !== 'all') query.category = category;
+    if (type && ['income', 'expense', 'transfer'].includes(type)) {
+      query.type = type;
+    }
+    if (category && category !== 'all') {
+      query.category = category;
+    }
+    if (accountId) {
+      query.accountId = accountId;
+    }
     if (startDate || endDate) {
       query.transactionDate = {};
       if (startDate) query.transactionDate.$gte = new Date(startDate);
       if (endDate) query.transactionDate.$lte = new Date(endDate);
     }
+    if (search && search.trim() !== '') {
+      const searchRegex = new RegExp(search.trim(), 'i');
+      query.$or = [
+        { title: searchRegex },
+        { merchant: searchRegex },
+        { notes: searchRegex },
+        { category: searchRegex },
+      ];
+    }
 
     const transactions = await Transaction.find(query).sort({ transactionDate: -1 });
 
+    const escapeCsvCell = (val) => {
+      if (val === null || val === undefined) return '""';
+      const str = String(val).replace(/"/g, '""').replace(/[\r\n]+/g, ' ');
+      return `"${str}"`;
+    };
+
     // Build CSV with safe escaping
     const headers = ['Date', 'Type', 'Category', 'Merchant', 'Title', 'Amount', 'Currency', 'Payment Method', 'Notes'];
-    const rows = transactions.map((t) => [
-      new Date(t.transactionDate).toISOString().split('T')[0],
-      t.type,
-      `"${(t.category || '').replace(/"/g, '""')}"`,
-      `"${(t.merchant || '').replace(/"/g, '""')}"`,
-      `"${(t.title || '').replace(/"/g, '""')}"`,
-      t.amount,
-      t.currency,
-      t.paymentMethod || 'UPI',
-      `"${(t.notes || '').replace(/"/g, '""')}"`,
-    ]);
+    const rows = transactions.map((t) => {
+      const dateStr = t.transactionDate && !isNaN(new Date(t.transactionDate).getTime())
+        ? new Date(t.transactionDate).toISOString().split('T')[0]
+        : '';
+      return [
+        dateStr,
+        escapeCsvCell(t.type),
+        escapeCsvCell(t.category),
+        escapeCsvCell(t.merchant),
+        escapeCsvCell(t.title),
+        typeof t.amount === 'number' ? t.amount : Number(t.amount) || 0,
+        escapeCsvCell(t.currency || 'INR'),
+        escapeCsvCell(t.paymentMethod || 'UPI'),
+        escapeCsvCell(t.notes || ''),
+      ];
+    });
 
     const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
 

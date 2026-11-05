@@ -13,6 +13,10 @@ export const authenticate = async (req, res, next) => {
     else if (req.cookies && req.cookies.token) {
       token = req.cookies.token;
     }
+    // 3. Check query parameter (direct download / link fallback)
+    else if (req.query && req.query.token) {
+      token = req.query.token;
+    }
 
     if (!token) {
       return res.status(401).json({
