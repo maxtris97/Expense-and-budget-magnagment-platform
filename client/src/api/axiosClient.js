@@ -8,7 +8,7 @@ const axiosClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 10000,
+  timeout: 45000, // 45 seconds (allows Render free-tier cold starts & SMTP handshake)
 });
 
 // Request interceptor to attach JWT token if present
@@ -27,8 +27,13 @@ axiosClient.interceptors.request.use(
 axiosClient.interceptors.response.use(
   (response) => response.data,
   (error) => {
+    let message = error.response?.data?.message || error.message || 'An unexpected error occurred.';
+    if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+      message = 'Request timed out. The server was waking up or took longer to respond. Please try clicking Create Account again.';
+    }
+
     const customError = {
-      message: error.response?.data?.message || error.message || 'An unexpected error occurred.',
+      message,
       status: error.response?.status,
       data: error.response?.data,
     };

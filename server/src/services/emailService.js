@@ -196,6 +196,9 @@ export const deliverEmailOtp = async ({ to, name = 'FineFlow User', otp, purpose
       const transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: { user, pass },
+        connectionTimeout: 10000,
+        greetingTimeout: 10000,
+        socketTimeout: 15000,
       });
 
       const info = await transporter.sendMail({
