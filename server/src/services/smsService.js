@@ -36,6 +36,9 @@ export const maskPhoneNumber = (fullNumber = '') => {
  * Detect active SMS provider
  */
 export const getActiveSmsProvider = () => {
+  if (process.env.SMS_PROVIDER === 'mock') {
+    return 'mock';
+  }
   if (process.env.FAST2SMS_API_KEY || (process.env.SMS_PROVIDER === 'fast2sms' && process.env.SMS_API_KEY)) {
     return 'fast2sms';
   }

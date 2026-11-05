@@ -264,8 +264,9 @@ export const initiateRegistration = async (req, res, next) => {
       emailVerified: false,
       mobileVerified: false,
       isMock: isSimulated,
-      message: isSimulated
-        ? 'Development Mode: Simulated verification codes generated. Check server console.'
+      mockMobileOtp: smsDelivery.isMock ? mobileOtp : undefined,
+      message: smsDelivery.isMock
+        ? `Verification code dispatched to your email! (Mobile simulation code: ${mobileOtp})`
         : 'Verification codes have been dispatched to your email address and mobile phone.',
     });
   } catch (error) {
@@ -473,8 +474,9 @@ export const sendMobileOtp = async (req, res, next) => {
     res.status(200).json({
       success: true,
       message: delivery.isMock
-        ? 'Dev Mode: New mobile OTP generated (check server console).'
+        ? `Dev Mode: New mobile simulation code: ${otp}`
         : 'Verification code sent. Please check your messages.',
+      mockMobileOtp: delivery.isMock ? otp : undefined,
       maskedPhone: maskPhoneNumber(pending.mobileNumber),
     });
   } catch (error) {
@@ -824,8 +826,9 @@ export const sendLoginOtp = async (req, res, next) => {
     res.status(200).json({
       success: true,
       message: delivery.isMock
-        ? 'Dev Mode: Mobile OTP login code generated (check server console).'
+        ? `Dev Mode: Mobile login simulation code: ${otp}`
         : 'OTP sent successfully to your registered mobile number.',
+      mockMobileOtp: delivery.isMock ? otp : undefined,
       maskedNumber: maskPhoneNumber(normalizedPhone),
       mobileNumber: normalizedPhone,
     });
