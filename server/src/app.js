@@ -50,6 +50,7 @@ app.use(
       }
     },
     credentials: true,
+    exposedHeaders: ['Content-Disposition'],
   })
 );
 
@@ -76,6 +77,21 @@ const authLimiter = rateLimit({
 });
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/register', authLimiter);
+
+// Specific rate limiting for OTP generation and password recovery endpoints
+const otpLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: 'Too many verification requests from this IP. Please try again later.',
+  },
+});
+app.use('/api/auth/send-otp', otpLimiter);
+app.use('/api/auth/resend-otp', otpLimiter);
+app.use('/api/auth/forgot-password', otpLimiter);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
