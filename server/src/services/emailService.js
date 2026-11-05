@@ -140,7 +140,8 @@ export const deliverEmailOtp = async ({ to, name = 'FineFlow User', otp, purpose
   // ============================================================
   if (provider === 'resend') {
     try {
-      const apiKey = process.env.RESEND_API_KEY.trim();
+      const rawKey = process.env.RESEND_API_KEY || '';
+      const apiKey = rawKey.trim().split(/\s+/)[0];
       const from = process.env.RESEND_FROM || process.env.EMAIL_FROM || 'FineFlow Finance <onboarding@resend.dev>';
 
       const response = await fetch('https://api.resend.com/emails', {
@@ -449,10 +450,12 @@ export const sendPasswordResetEmail = async ({ to, name = 'FineFlow User', reset
 
   if (provider === 'resend') {
     try {
+      const rawKey = process.env.RESEND_API_KEY || '';
+      const apiKey = rawKey.trim().split(/\s+/)[0];
       const response = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${process.env.RESEND_API_KEY.trim()}`,
+          Authorization: `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
