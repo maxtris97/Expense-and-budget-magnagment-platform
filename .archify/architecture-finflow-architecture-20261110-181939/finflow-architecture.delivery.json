@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "17d35fcd-41b4-41bd-8702-15bc4a11bd30",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "C:\\Users\\LENOVO\\Tsproject\\Expense-and-budget-magnagment-platform\\.archify\\architecture-finflow-architecture-20261110-181939\\candidate.json",
+  "output": "C:\\Users\\LENOVO\\Tsproject\\Expense-and-budget-magnagment-platform\\.archify\\architecture-finflow-architecture-20261110-181939\\finflow-architecture.html",
+  "specification": {
+    "sha256": "6a75307bf85c56e5e6a60106fbc96395fa1544bc89d0ff67325f14cb0b97832b",
+    "bytes": 5624
+  },
+  "artifact": {
+    "sha256": "e2661caf06f55700ba188cbe5121317fdeb1c92209d1f5168b5a4cd3665500fa",
+    "bytes": 844961
+  }
+}

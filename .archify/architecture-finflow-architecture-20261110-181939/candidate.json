@@ -1,0 +1,224 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "FinFlow System Architecture",
+    "output": ".archify/architecture-finflow-architecture-20261110-181939/finflow-architecture.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/maxtris97/Expense-and-budget-magnagment-platform.git",
+      "revision": "213576ba65fbfd85394482580e2cbc10a1226fd0"
+    }
+  },
+  "components": [
+    {
+      "id": "clients",
+      "type": "external",
+      "icon": "person",
+      "label": "Web & Mobile Users",
+      "sublabel": "Browser & Responsive Client",
+      "pos": [40, 190],
+      "size": [140, 64]
+    },
+    {
+      "id": "frontend",
+      "type": "frontend",
+      "icon": "frontend",
+      "label": "React 18 SPA",
+      "sublabel": "Vite + Tailwind CSS",
+      "pos": [270, 190],
+      "size": [150, 64],
+      "sources": [
+        {
+          "path": "client/src/routes/AppRoutes.jsx",
+          "line": 1,
+          "end_line": 45,
+          "label": "Client Router & Pages"
+        }
+      ]
+    },
+    {
+      "id": "gateway",
+      "type": "security",
+      "icon": "security",
+      "label": "API Gateway",
+      "sublabel": "Helmet + Rate Limit + CORS",
+      "pos": [510, 190],
+      "size": [160, 64],
+      "sources": [
+        {
+          "path": "server/src/app.js",
+          "line": 28,
+          "end_line": 56,
+          "label": "Security Middlewares"
+        },
+        {
+          "path": "server/src/app.js",
+          "line": 68,
+          "end_line": 81,
+          "label": "Auth Rate Limiting"
+        }
+      ]
+    },
+    {
+      "id": "api",
+      "type": "backend",
+      "icon": "backend",
+      "label": "Express REST API",
+      "sublabel": "Controllers & Auth Services",
+      "pos": [770, 190],
+      "size": [160, 64],
+      "sources": [
+        {
+          "path": "server/src/server.js",
+          "line": 7,
+          "end_line": 19,
+          "label": "Express Server Entry"
+        },
+        {
+          "path": "server/src/controllers/authController.js",
+          "line": 187,
+          "end_line": 213,
+          "label": "Dual OTP & Password Hashing"
+        }
+      ]
+    },
+    {
+      "id": "brevo_service",
+      "type": "cloud",
+      "icon": "cloud",
+      "label": "Brevo Email API",
+      "sublabel": "Port 443 HTTPS REST API",
+      "pos": [770, 50],
+      "size": [160, 64],
+      "sources": [
+        {
+          "path": "server/src/services/emailService.js",
+          "line": 216,
+          "end_line": 248,
+          "label": "Brevo HTTP Client"
+        }
+      ]
+    },
+    {
+      "id": "sms_service",
+      "type": "cloud",
+      "icon": "cloud",
+      "label": "Fast2SMS Gateway",
+      "sublabel": "Transactional SMS Gateway",
+      "pos": [770, 330],
+      "size": [160, 64],
+      "sources": [
+        {
+          "path": "server/src/controllers/authController.js",
+          "line": 215,
+          "end_line": 228,
+          "label": "SMS Delivery Dispatch"
+        }
+      ]
+    },
+    {
+      "id": "database",
+      "type": "database",
+      "icon": "database",
+      "label": "MongoDB Atlas",
+      "sublabel": "Replica Set Cluster",
+      "pos": [1030, 190],
+      "size": [150, 64],
+      "sources": [
+        {
+          "path": "server/src/config/database.js",
+          "line": 13,
+          "end_line": 28,
+          "label": "Mongoose Atlas Connection"
+        }
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Render Cloud Platform (US-East)",
+      "wraps": ["frontend", "gateway", "api"]
+    },
+    {
+      "kind": "security-group",
+      "label": "Backend Application Isolation",
+      "wraps": ["gateway", "api"]
+    }
+  ],
+  "connections": [
+    {
+      "id": "users-to-frontend",
+      "from": "clients",
+      "to": "frontend",
+      "label": "HTTPS :443",
+      "variant": "emphasis"
+    },
+    {
+      "id": "frontend-to-gateway",
+      "from": "frontend",
+      "to": "gateway",
+      "label": "Axios REST"
+    },
+    {
+      "id": "gateway-to-api",
+      "from": "gateway",
+      "to": "api",
+      "label": "Secured Req",
+      "variant": "security"
+    },
+    {
+      "id": "api-to-database",
+      "from": "api",
+      "to": "database",
+      "label": "Mongoose TLS"
+    },
+    {
+      "id": "api-to-brevo",
+      "from": "api",
+      "to": "brevo_service",
+      "label": "Brevo API :443",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "api-to-sms",
+      "from": "api",
+      "to": "sms_service",
+      "label": "SMS Dispatch",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "variant": "dashed"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Client & Edge Layer",
+      "items": [
+        "React 18 SPA built with Vite and Tailwind CSS",
+        "Centralized routing with ProtectedRoute access control",
+        "Axios HTTP client with automatic bearer token injection"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Security & Defense in Depth",
+      "items": [
+        "Helmet security headers, strict CORS origin controls, and cookie signing",
+        "Tiered Express rate limiting for login, registration, and OTP generation",
+        "Bcrypt password salting and SHA-256 OTP secret hashing"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Backend & Cloud Services",
+      "items": [
+        "Node.js Express REST API orchestrating auth, transactions, and budgets",
+        "MongoDB Atlas cloud replica set managed via Mongoose ODM",
+        "Direct Brevo HTTP API over Port 443 for reliable OTP delivery on cloud hosts"
+      ]
+    }
+  ]
+}

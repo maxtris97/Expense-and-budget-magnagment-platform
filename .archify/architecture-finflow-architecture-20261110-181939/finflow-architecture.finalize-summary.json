@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "architecture",
+  "quality": "showcase",
+  "specification": {
+    "path": "C:\\Users\\LENOVO\\Tsproject\\Expense-and-budget-magnagment-platform\\.archify\\architecture-finflow-architecture-20261110-181939\\candidate.json",
+    "sha256": "6a75307bf85c56e5e6a60106fbc96395fa1544bc89d0ff67325f14cb0b97832b",
+    "bytes": 5624
+  },
+  "artifact": {
+    "path": "C:\\Users\\LENOVO\\Tsproject\\Expense-and-budget-magnagment-platform\\.archify\\architecture-finflow-architecture-20261110-181939\\finflow-architecture.html",
+    "sha256": "e2661caf06f55700ba188cbe5121317fdeb1c92209d1f5168b5a4cd3665500fa",
+    "bytes": 844961
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "C:\\Users\\LENOVO\\Tsproject\\Expense-and-budget-magnagment-platform\\.archify\\architecture-finflow-architecture-20261110-181939\\finflow-architecture.finalize.json",
+    "summaryReceipt": "C:\\Users\\LENOVO\\Tsproject\\Expense-and-budget-magnagment-platform\\.archify\\architecture-finflow-architecture-20261110-181939\\finflow-architecture.finalize-summary.json",
+    "browserCheckReceipt": "C:\\Users\\LENOVO\\Tsproject\\Expense-and-budget-magnagment-platform\\.archify\\architecture-finflow-architecture-20261110-181939\\finflow-architecture.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.2.0",
+    "availableVersion": "3.2.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-11-10T12:55:37.525Z",
+    "source": "network",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 8848,
+  "browserCheck": {
+    "requested": true,
+    "ran": true
+  }
+}
