@@ -28,9 +28,6 @@
 ### 🎓 Final Year Project — Kalasalingam Academy of Research and Education
 - **Department:** Computer Science & Engineering (Artificial Intelligence & Machine Learning)
 - **Team Name:** Team Avengers
-- **Presentation Decks:**
-  - 📊 **[Download Project Presentation (.pptx)](docs/presentation/FinFlow_Project_Presentation.pptx)**
-  - 🖥️ **[Download Final Year Defense Deck 16:9 Widescreen (.pptx)](docs/presentation/FinFlow_Final_Year_Presentation.pptx)**
 
 | Team Member | Registration Number | Project Responsibility |
 |---|---|---|
